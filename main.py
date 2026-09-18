@@ -61,6 +61,16 @@ def main():
         "vulkan-tools",  "mesa-vulkan-drivers", "mesa-demos", # so we can test the GPU inside the container
         "wl-clipboard", # so we can access the wayland clipboard inside the container
         "glibc-langpack-en", # this might be related to setting the locale, but I can't remember
+
+        "procps-ng",
+        "pciutils",
+        "lsb_release",
+      # glibc-langpack-en
+      # curl
+      # pkgconfig
+      # gcc gcc-c++ make kernel-devel
+      # openssl-devel
+      # perl-Time-Piece perl-File-Copy perl-File-Compare perl-IPC-Cmd perl-FindBin \
     ]
 
     subprocess.run(
@@ -76,8 +86,7 @@ def main():
  
             # Replace `dnf` with `apt` if you're using debian-based distros like ubuntu or mint.
             # Some of the package names might be different between distros
-            RUN dnf -y update && \\
-            dnf -y install {' '.join(packages)}
+            RUN dnf -y update && dnf -y install {' '.join(packages)}
             RUN dnf clean all
 
             RUN useradd -m -s /bin/bash {container_username}
