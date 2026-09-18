@@ -98,7 +98,6 @@ def main():
             "-i",
             "-t",
             f"--name={container_name}",
-            container_name,
             f"--hostname={container_name}",
             "-e", f"XDG_RUNTIME_DIR={container_xdg_runtime_dir}",
             "-e",  "XDG_SESSION_TYPE=wayland",
