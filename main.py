@@ -59,7 +59,7 @@ def main():
         "wl-clipboard", # so we can access the wayland clipboard inside the container
         "glibc-langpack-en", # this might be related to setting the locale, but I can't remember
     ]
- 
+
     subprocess.run(
         [
             "podman", "build",
@@ -77,8 +77,7 @@ def main():
             dnf -y install {' '.join(packages)}
  
             RUN dnf clean all
-            RUN localectl set-locale LANG=en_US.UTF-8
- 
+
             RUN useradd -m -s /bin/bash {container_username}
  
             USER {container_username}
