@@ -63,6 +63,7 @@ def main():
         "glibc-langpack-en", # this might be related to setting the locale, but I can't remember
     ]
 
+    print("gnna podman build.....")
     subprocess.run(
         [
             "podman", "build",
@@ -78,7 +79,6 @@ def main():
             # Some of the package names might be different between distros
             RUN dnf -y update && \\
             dnf -y install {' '.join(packages)}
- 
             RUN dnf clean all
 
             RUN useradd -m -s /bin/bash {container_username}
@@ -89,6 +89,7 @@ def main():
         text=True,
         check=True,
     )
+    print("finished podman build.....")
  
     # podman container create ...
     subprocess.run(
