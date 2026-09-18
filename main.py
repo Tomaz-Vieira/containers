@@ -90,9 +90,9 @@ def main():
             RUN dnf clean all
 
             RUN useradd -m -s /bin/bash {container_username}
- 
-            USER {container_username}
-            RUN mkdir {container_xdg_runtime_dir}
+                USER {container_username}
+                RUN mkdir {container_xdg_runtime_dir}
+            USER root
         """),
         text=True,
         check=True,
