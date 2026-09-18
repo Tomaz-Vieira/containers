@@ -52,7 +52,7 @@ def main():
     user_id = os.getuid()
     os_version = OsVersion.get_current()
     now = datetime.datetime.now()
-    date_string = f"{now.year}_{now.month}_{now.day}__{now.hour}:{now.minute}:{now.second}"
+    date_string = f"{now.year}_{now.month:02}_{now.day:02}__{now.hour:02}_{now.minute:02}_{now.second:02}"
     image_tag: str = f"agent_image_{os_version.os_id}__{os_version.os_version_id}__{date_string}"
 
     packages = [
