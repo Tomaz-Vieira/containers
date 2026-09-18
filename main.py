@@ -63,7 +63,6 @@ def main():
         "glibc-langpack-en", # this might be related to setting the locale, but I can't remember
     ]
 
-    print("gnna podman build.....")
     subprocess.run(
         [
             "podman", "build",
@@ -89,7 +88,6 @@ def main():
         text=True,
         check=True,
     )
-    print("finished podman build.....")
  
     # podman container create ...
     subprocess.run(
