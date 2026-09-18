@@ -5,6 +5,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 import textwrap
+import datetime
 
 
 @dataclass
@@ -50,7 +51,9 @@ def main():
  
     user_id = os.getuid()
     os_version = OsVersion.get_current()
-    image_tag: str = f"agent_image_{os_version.os_id}__{os_version.os_version_id}"
+    now = datetime.datetime.now()
+    date_string = f"{now.year}_{now.month}_{now.day}__{now.hour}:{now.minute}:{now.second}"
+    image_tag: str = f"agent_image_{os_version.os_id}__{os_version.os_version_id}__{date_string}"
 
     packages = [
         "systemd", # so we can boot the container, set locale, and run the ssh service
