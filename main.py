@@ -36,9 +36,11 @@ class OsVersion:
     def to_docker_FROM_statement(self) -> str:
         return f"FROM {self.os_id}:{self.os_version_id}"
 
-    def to_iamge_tag(self) -> str:
-        now = datetime.datetime.now()
-        date_string = f"{now.year}_{now.month:02}_{now.day:02}__{now.hour:02}_{now.minute:02}_{now.second:02}"
+    def to_image_tag(self, timestamp: datetime.datetime) -> str:
+        date_string = (
+            f"{timestamp.year}_{timestamp.month:02}_{timestamp.day:02}__"
+            f"{timestamp.hour:02}_{timestamp.minute:02}_{timestamp.second:02}"
+        )
         version_str = self.os_version_id.replace('.', '_')
         os_id_str = self.os_id.replace(" ", "_").replace(".", "_")
         return f"agent_image_{os_id_str}__{version_str}__{date_string}"
@@ -74,6 +76,7 @@ def main():
  
     user_id = os.getuid()
     os_version = OsVersion.get_current()
+    now = datetime.datetime.now()
 
     packages = [
         "systemd", # so we can boot the container, set locale, and run the ssh service
@@ -100,7 +103,7 @@ def main():
         [
             "podman", "build",
             "--progress=plain",
-            f"--tag={image_tag}",
+            f"--tag={os_version.to_image_tag(now)}",
             "--file=-",
             ".",
         ],
@@ -145,7 +148,7 @@ def main():
             "-v", "/dev/dri/card1:/dev/dri/card1",
             "-v","/dev/dri/renderD128:/dev/dri/renderD128",
             "-p", f"{ssh_port_on_host}:22",
-            f"localhost/{image_tag}",
+            f"localhost/{os_version.to_image_tag(now)}",
             "/sbin/init",
             # --group-add 44 \
             # --group-add 993 \
