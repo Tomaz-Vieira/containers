@@ -24,10 +24,10 @@ class OsVersion:
         with open("/etc/os-release") as f:
             for line in f.readlines():
                 if line.startswith(ID_PREFIX):
-                    os_id = line.split(ID_PREFIX)[1].strip()
+                    os_id = line.split(ID_PREFIX)[1].strip().lstrip('"').rstrip('"')
                     continue
                 if line.startswith(VERSION_ID_PREFIX):
-                    os_version_id = line.split(VERSION_ID_PREFIX)[1].strip()
+                    os_version_id = line.split(VERSION_ID_PREFIX)[1].strip().lstrip('"').rstrip('"')
                     continue
         if os_id is None or os_version_id is None:
             raise RuntimeError("Could not determine os id and version from /etc/os-release")
