@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
 import textwrap
 import datetime
 
@@ -45,6 +45,12 @@ class OsVersion:
         os_id_str = self.os_id.replace(" ", "_").replace(".", "_")
         return f"agent_image_{os_id_str}__{version_str}__{date_string}"
 
+    def is_fedora(self) -> bool:
+        return "fedora" in self.os_id.lower()
+
+    def package_manager(self) -> str:
+        return "dnf" if self.is_fedora() else "apt"
+
 def main():
     parser = argparse.ArgumentParser(
         description="Build an image and create a podman container from it."
@@ -81,11 +87,12 @@ def main():
     packages = [
         "systemd", # so we can boot the container, set locale, and run the ssh service
         "openssh-server", # so we can run the ssh server inside the continer
-        "vulkan-tools",  "mesa-vulkan-drivers", "mesa-demos", # so we can test the GPU inside the container
+        "vulkan-tools",  "mesa-vulkan-drivers", # mesa stuff is for testing graphics
+        "mesa-demos" if os_version.is_fedora() else "mesa-utils",
         "wl-clipboard", # so we can access the wayland clipboard inside the container
         "git",
-        "glibc-langpack-en", # this might be related to setting the locale, but I can't remember
-        # "procps-ng",
+        "glibc-langpack-en" if os_version.is_fedora() else "locales",
+        "procps-ng" if os_version.is_fedora() else "procps",
         # "pciutils",
         # "lsb_release",
     ]
@@ -112,8 +119,9 @@ def main():
  
             # Replace `dnf` with `apt` if you're using debian-based distros like ubuntu or mint.
             # Some of the package names might be different between distros
-            RUN dnf -y update && dnf -y install {' '.join(packages)}
-            RUN dnf clean all
+            RUN {os_version.package_manager()} -y update
+            RUN {os_version.package_manager()} -y install {' '.join(packages)}
+            RUN {os_version.package_manager()} clean all
 
             RUN useradd -m -s /bin/bash {container_username}
                 USER {container_username}
