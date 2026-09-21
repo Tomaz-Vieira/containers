@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+from pathlib import Path
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -41,13 +42,28 @@ def main():
     )
     parser.add_argument("--container-name", required=True)
     parser.add_argument("--container-username", required=False, default="builder")
-    parser.add_argument("--ssh-port-on-host", required=True, type=int, help="Port that will be mapped on the host to the container's 22 port")
+    parser.add_argument(
+        "--ssh-port-on-host",
+        required=True,
+        type=int,
+        help="Port that will be mapped on the host to the container's 22 port"
+    )
+    parser.add_argument(
+        "--inject-host-pub-keys",
+        action="store_true",
+        default=True,
+        help="Inject ~/.ssh/*.pub into the container's authorized_keys"
+    )
     args = parser.parse_args()
  
     container_name: str = args.container_name
     ssh_port_on_host: int = args.ssh_port_on_host
     container_username: str = args.container_username
-    container_xdg_runtime_dir = f"/home/{container_username}/xdg_runtime"
+    container_user_home = Path("/home") / container_username
+    container_ssh_dir = container_user_home / ".ssh"
+    container_ssh_authorized_keys_path = container_ssh_dir / "authorized_keys"
+    container_xdg_runtime_dir = container_user_home / "xdg_runtime"
+    inject_host_pub_keys = args.inject_host_pub_keys
  
     user_id = os.getuid()
     os_version = OsVersion.get_current()
@@ -60,11 +76,21 @@ def main():
         "openssh-server", # so we can run the ssh server inside the continer
         "vulkan-tools",  "mesa-vulkan-drivers", "mesa-demos", # so we can test the GPU inside the container
         "wl-clipboard", # so we can access the wayland clipboard inside the container
+        "git",
         "glibc-langpack-en", # this might be related to setting the locale, but I can't remember
         # "procps-ng",
         # "pciutils",
         # "lsb_release",
     ]
+
+    pub_key_injections: list[str] = []
+    if inject_host_pub_keys:
+        for pth in Path.home().joinpath(".ssh").iterdir():
+            if pth.is_file() and pth.suffix == ".pub":
+                key = open(pth).read()
+                pub_key_injections.append(
+                    f"RUN echo '{key}' >> {container_ssh_authorized_keys_path}"
+                )
 
     subprocess.run(
         [
@@ -85,6 +111,9 @@ def main():
             RUN useradd -m -s /bin/bash {container_username}
                 USER {container_username}
                 RUN mkdir {container_xdg_runtime_dir}
+                RUN mkdir -p {container_user_home}/.ssh
+                {"\n".join(pub_key_injections)}
+
             USER root
         """),
         text=True,
