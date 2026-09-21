@@ -34,7 +34,14 @@ class OsVersion:
         return OsVersion(os_id=os_id, os_version_id=os_version_id)
 
     def to_docker_FROM_statement(self) -> str:
-        return f"FROM {self.os_id}:{self.os_version_id.replace('.', '_')}"
+        return f"FROM {self.os_id}:{self.os_version_id}"
+
+    def to_iamge_tag(self) -> str:
+        now = datetime.datetime.now()
+        date_string = f"{now.year}_{now.month:02}_{now.day:02}__{now.hour:02}_{now.minute:02}_{now.second:02}"
+        version_str = self.os_version_id.replace('.', '_')
+        os_id_str = self.os_id.replace(" ", "_").replace(".", "_")
+        return f"agent_image_{os_id_str}__{version_str}__{date_string}"
 
 def main():
     parser = argparse.ArgumentParser(
@@ -67,9 +74,6 @@ def main():
  
     user_id = os.getuid()
     os_version = OsVersion.get_current()
-    now = datetime.datetime.now()
-    date_string = f"{now.year}_{now.month:02}_{now.day:02}__{now.hour:02}_{now.minute:02}_{now.second:02}"
-    image_tag: str = f"agent_image_{os_version.os_id}__{os_version.os_version_id}__{date_string}"
 
     packages = [
         "systemd", # so we can boot the container, set locale, and run the ssh service
