@@ -87,7 +87,7 @@ def main():
     if inject_host_pub_keys:
         for pth in Path.home().joinpath(".ssh").iterdir():
             if pth.is_file() and pth.suffix == ".pub":
-                key = open(pth).read()
+                key = open(pth).read().strip()
                 pub_key_injections.append(
                     f"RUN echo '{key}' >> {container_ssh_authorized_keys_path}"
                 )
