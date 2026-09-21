@@ -1,8 +1,11 @@
-# Scripts to create a podman container for agents
+# Create a podman dev container for untrusted code
 
 ## What
 
 The main script creates a container that is nicely setup to be used as a development container.
+
+Development was done using `podman` but it might transfer trivially to `docker`. The reason is that
+`podman` doesn't have a daemon running as `root` on the host, which is probably safer than `docker`.
 
 ## Usage
 
