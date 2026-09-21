@@ -34,7 +34,7 @@ class OsVersion:
         return OsVersion(os_id=os_id, os_version_id=os_version_id)
 
     def to_docker_FROM_statement(self) -> str:
-        return f"FROM {self.os_id}:{self.os_version_id}"
+        return f"FROM {self.os_id}:{self.os_version_id.replace('.', '_')}"
 
 def main():
     parser = argparse.ArgumentParser(
