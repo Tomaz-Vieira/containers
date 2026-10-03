@@ -7,6 +7,9 @@ import sys
 from dataclasses import dataclass, is_dataclass
 import textwrap
 import datetime
+import json
+from typing import Sequence
+import tempfile
 
 
 @dataclass
@@ -69,6 +72,12 @@ def main():
         default=True,
         help="Inject ~/.ssh/*.pub into the container's authorized_keys"
     )
+    parser.add_argument(
+        "--allow-io-uring",
+        action="store_true",
+        default=False,
+        help="Allow io_uring syscalls inside the container. Potentially dangerous, usually unnecessary."
+    )
     args = parser.parse_args()
  
     container_name: str = args.container_name
@@ -79,6 +88,7 @@ def main():
     container_ssh_authorized_keys_path = container_ssh_dir / "authorized_keys"
     container_xdg_runtime_dir = container_user_home / "xdg_runtime"
     inject_host_pub_keys = args.inject_host_pub_keys
+    allow_io_uring = args.allow_io_uring
  
     user_id = os.getuid()
     os_version = OsVersion.get_current()
@@ -134,6 +144,19 @@ def main():
         text=True,
         check=True,
     )
+
+    if allow_io_uring:
+        with open("/usr/share/containers/seccomp.json", "r") as f:
+            seccomp_config = json.load(f)
+        seccomp_config["syscalls"].append({
+            "names": ["io_uring_setup", "io_uring_enter", "io_uring_register"],
+            "action": "SCMP_ACT_ALLOW"
+        })
+        tmp_seccomp_file = tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=True)
+        tmp_seccomp_file.write(json.dumps(seccomp_config, indent=4))
+        seccomp_json_args: Sequence[str] = ["--security-opt", f"seccomp={tmp_seccomp_file.name}"]
+    else:
+        seccomp_json_args: Sequence[str] = []
  
     # podman container create ...
     subprocess.run(
@@ -149,6 +172,7 @@ def main():
             "-e",  "COLORTERM=truecolor",
             "-e",  "TERM=xterm",
             "--security-opt", "label=disable", # this is related to selinux and might not be necessary
+            *seccomp_json_args,
             "--shm-size=16g",
             "--pids-limit=-1",
             "--cap-add=CAP_SYS_NICE",
