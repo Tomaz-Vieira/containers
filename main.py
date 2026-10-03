@@ -78,6 +78,18 @@ def main():
         default=False,
         help="Allow io_uring syscalls inside the container. Potentially dangerous, usually unnecessary."
     )
+    parser.add_argument(
+        "--shell",
+        choices=["bash", "fish"],
+        default="bash",
+        help="Shell to be used in the container"
+    )
+    parser.add_argument(
+        "--install-rust",
+        action="store_true",
+        default=False,
+        help="Install rust"
+    )
     args = parser.parse_args()
  
     container_name: str = args.container_name
@@ -89,6 +101,8 @@ def main():
     container_xdg_runtime_dir = container_user_home / "xdg_runtime"
     inject_host_pub_keys = args.inject_host_pub_keys
     allow_io_uring = args.allow_io_uring
+    shell = args.shell
+    install_rust = args.install_rust
  
     user_id = os.getuid()
     os_version = OsVersion.get_current()
@@ -105,6 +119,7 @@ def main():
         "procps-ng" if os_version.is_fedora() else "procps",
         # "pciutils",
         # "lsb_release",
+        *(["fish"] if shell == "fish" else []),
     ]
 
     pub_key_injections: list[str] = []
@@ -133,11 +148,15 @@ def main():
             RUN {os_version.package_manager()} -y install {' '.join(packages)}
             RUN {os_version.package_manager()} clean all
 
-            RUN useradd -m -s /bin/bash {container_username}
+            RUN useradd -m --shell /usr/bin/{shell} {container_username}
                 USER {container_username}
                 RUN mkdir {container_xdg_runtime_dir}
                 RUN mkdir -p {container_user_home}/.ssh
                 {"\n".join(pub_key_injections)}
+
+            USER builder
+                WORKDIR /home/builder
+                {"RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y" if install_rust else ""}
 
             USER root
         """),
