@@ -173,6 +173,7 @@ def main():
         })
         tmp_seccomp_file = tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=True)
         tmp_seccomp_file.write(json.dumps(seccomp_config, indent=4))
+        tmp_seccomp_file.flush()
         seccomp_json_args: Sequence[str] = ["--security-opt", f"seccomp={tmp_seccomp_file.name}"]
     else:
         seccomp_json_args: Sequence[str] = []
