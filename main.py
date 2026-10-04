@@ -114,6 +114,7 @@ def main():
         "vulkan-tools",  "mesa-vulkan-drivers", # mesa stuff is for testing graphics
         "mesa-demos" if os_version.is_fedora() else "mesa-utils",
         "wl-clipboard", # so we can access the wayland clipboard inside the container
+        "wayland-utils", # for querying e.g. screen width and height
         "git",
         "glibc-langpack-en" if os_version.is_fedora() else "locales",
         "procps-ng" if os_version.is_fedora() else "procps",
