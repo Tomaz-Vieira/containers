@@ -8,7 +8,7 @@ from dataclasses import dataclass, is_dataclass
 import textwrap
 import datetime
 import json
-from typing import Sequence
+from typing import Literal, Sequence
 import tempfile
 
 
@@ -79,6 +79,12 @@ def main():
         help="Allow io_uring syscalls inside the container. Potentially dangerous, usually unnecessary."
     )
     parser.add_argument(
+        "--allow-perf-monitoring",
+        action="store_true",
+        default=False,
+        help="Allow performance monitoring for tools like 'perf'"
+    )
+    parser.add_argument(
         "--shell",
         choices=["bash", "fish"],
         default="bash",
@@ -103,6 +109,10 @@ def main():
     allow_io_uring = args.allow_io_uring
     shell = args.shell
     install_rust = args.install_rust
+
+    capabilities: set[Literal["CAP_SYS_NICE", "PERFMON", "SYS_PTRACE"]] = set()
+    if args.allow_perf_monitoring:
+        capabilities |= set(["PERFMON", "SYS_PTRACE"])
  
     user_id = os.getuid()
     os_version = OsVersion.get_current()
@@ -196,7 +206,7 @@ def main():
             *seccomp_json_args,
             "--shm-size=16g",
             "--pids-limit=-1",
-            "--cap-add=CAP_SYS_NICE",
+            *[f"--cap-add={cap}" for cap in capabilities],
             "-v", f"/run/user/{user_id}/wayland-0:{container_xdg_runtime_dir}/wayland-0",
             "-v", "/dev/dri/card1:/dev/dri/card1",
             "-v","/dev/dri/renderD128:/dev/dri/renderD128",
